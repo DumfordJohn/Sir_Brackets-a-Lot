@@ -23,5 +23,17 @@
                 }
             ]
         ]
+    },
+    "test double": {
+        "type": "double",
+        "players": [
+            {
+                "name": "Naudu",
+                "id": 294082562211577856
+            }
+        ],
+        "emoji": "\ud83c\udfae",
+        "message_id": 1490137057710964816,
+        "channel_id": 1490113944507908128
     }
 }

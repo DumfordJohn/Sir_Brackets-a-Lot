@@ -55,6 +55,8 @@ async def on_ready():
 
 async def load_all_cogs():
     for root, _, files in os.walk("cogs"):
+        if "formats" in root:
+            continue
         for filename in files:
             if filename.endswith(".py") and not filename.startswith("_") and filename != "match_view.py":
                 module = os.path.join(root, filename)[:-3].replace(os.sep, ".")
