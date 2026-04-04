@@ -11,16 +11,17 @@ class SignupAdd(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.user_id == self.bot.user.id:
-            return  # Ignore bot's own reactions
-
-        if str(payload.emoji) != "🎮":
-            return  # Only process 🎮 emoji
+            return
 
         tournaments = load_tournaments()
 
         for name, tournament in tournaments.items():
             if payload.message_id != tournament.get("message_id"):
                 continue
+        
+            signup_emoji = tournament.get("emoji", "🎮")
+            if str(payload.emoji) != signup_emoji:
+                return
 
             guild = self.bot.get_guild(payload.guild_id)
             if not guild:
@@ -43,10 +44,10 @@ class SignupAdd(commands.Cog):
                 embed = message.embeds[0]
 
                 player_names = "\n".join(p["name"] for p in tournament["players"])
-                embed.description = f"React with 🎮 to join!\n\n**Players Signed Up:**\n{player_names}"
+                embed.description = f"React with {signup_emoji} to join!\n\n**Players Signed Up:**\n{player_names}"
                 await message.edit(embed=embed)
             except Exception as e:
-                print(f"❌ Failed to update signup embed: {e}")
+                print(f"Failed to update signup embed: {e}")
 
             break
 

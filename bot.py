@@ -3,11 +3,12 @@ import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-
-GUILD_ID = 1125407155537854504
+from tournament_data import load_tournaments
+from cogs.tournament.match_view import MatchView
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
+GUILD_ID = int(os.getenv('GUILD_ID'))
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -19,15 +20,37 @@ bot = commands.Bot(command_prefix=None, intents=intents)
 
 @bot.event
 async def on_ready():
-    if not hasattr(bot, "synced"):
-        guild = discord.Object(id=GUILD_ID)
-        await bot.tree.sync()
-        bot.synced = True
-        print("Synced global commands:")
-        for command in await bot.tree.fetch_commands():
-            print(f" - /{command.name}: {command.description}")
-        await bot.tree.sync(guild=guild)
-        print(f"Synced commands to guild {GUILD_ID}")
+    tournaments = load_tournaments()
+    for name, tournament in tournaments.items():
+        rounds = tournament.get("rounds", [])
+        for round_index, round_matches in enumerate(rounds):
+            for match_index, match in enumerate(round_matches):
+                if isinstance(match, (list, tuple)):
+                    p1, p2 = match
+                elif isinstance(match, dict):
+                    if "winner" in match:
+                        continue
+                    p1 = match.get("player1")
+                    p2 = match.get("player2")
+                else:
+                    continue
+
+                view = MatchView(
+                    tournament_name=name,
+                    round_index=round_index,
+                    match_index=match_index,
+                    player1=p1,
+                    player2=p2
+                )
+                bot.add_view(view)
+
+    guild = discord.Object(id=GUILD_ID)
+    bot.tree.copy_global_to(guild=guild)
+    synced = await bot.tree.sync(guild=guild)
+    print(f"Synced {len(synced)} commands to guild {GUILD_ID}")
+    print("Commands registered:")
+    for command in synced:
+        print(f" - /{command.name}: {command.description}")
     print(f"Logged in as {bot.user}")
 
 async def load_all_cogs():

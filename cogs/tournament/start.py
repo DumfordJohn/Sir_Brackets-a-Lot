@@ -13,7 +13,7 @@ class TournamentStart(commands.Cog):
     @app_commands.command(name="start_tournament", description="Start a tournament and create matches.")
     @app_commands.describe(name="The name of the tournament to start")
     async def start_tournament(self, interaction: discord.Interaction, name: str):
-        print("\ud83d\udce5 Received start_tournament command")
+        print("Received start_tournament command")
         await interaction.response.defer()
 
         if not interaction.user.guild_permissions.administrator:
@@ -40,7 +40,10 @@ class TournamentStart(commands.Cog):
             else:
                 matchups.append((players[i]["name"], "BYE"))
 
-        channel = interaction.channel
+        channel = interaction.guild.get_channel(tournament["channel_id"])
+        if not channel:
+            await interaction.followup.send("Could not find the sign-ups channel.", ephemeral=True)
+            return
 
         try:
             signup_message = await channel.fetch_message(tournament["message_id"])
