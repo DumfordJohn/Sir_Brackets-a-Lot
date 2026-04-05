@@ -13,15 +13,27 @@ def make_matchups(players: list) -> list:
     return matchups
 
 
-async def send_match(thread, tournament_name: str, bracket: str, round_index: int, match_index: int, p1: str, p2: str, round_label: str):
+def get_mention(name: str, players: list) -> str:
+    """Look up a player's Discord ID and return a mention, or fall back to their name."""
+    if name == "BYE":
+        return "BYE"
+    player = next((p for p in players if p["name"] == name), None)
+    return f"<@{player['id']}>" if player else name
+
+
+async def send_match(thread, tournament_name: str, bracket: str, round_index: int, match_index: int, p1: str, p2: str, round_label: str, players: list):
     color = discord.Color.green() if bracket == "winners" else discord.Color.red() if bracket == "losers" else discord.Color.gold()
+
+    p1_mention = get_mention(p1, players)
+    p2_mention = get_mention(p2, players)
+
     embed = discord.Embed(
         title=f"{round_label} - Match {match_index + 1}: {p1} vs {p2}",
         description="Click a button below to report the winner.",
         color=color
     )
     embed.add_field(name="Bracket", value=bracket.title(), inline=True)
-    embed.add_field(name="Participants", value=f"{p1} vs {p2}", inline=False)
+    embed.add_field(name="Participants", value=f"{p1_mention} vs {p2_mention}", inline=False)
 
     view = MatchView(
         tournament_name=f"{tournament_name}|{bracket}",
@@ -47,7 +59,7 @@ async def start(interaction: discord.Interaction, tournament_name: str, tourname
 
     await thread.send("**Winners Bracket - Round 1**")
     for i, match in enumerate(matchups):
-        await send_match(thread, tournament_name, "winners", 0, i, match["player1"], match["player2"], "Winners R1")
+        await send_match(thread, tournament_name, "winners", 0, i, match["player1"], match["player2"], "Winners R1", players)
 
 
 async def advance(interaction: discord.Interaction, tournament: dict, tournament_name: str, bracket: str, round_index: int, winner_name: str, loser_name: str):
@@ -56,17 +68,19 @@ async def advance(interaction: discord.Interaction, tournament: dict, tournament
         await interaction.response.send_message("Could not find tournament thread.", ephemeral=True)
         return
 
+    players = tournament.get("players", [])
+
     if bracket == "winners":
-        await _advance_winners(interaction, tournament, tournament_name, round_index, winner_name, loser_name, thread)
+        await _advance_winners(interaction, tournament, tournament_name, round_index, winner_name, loser_name, thread, players)
     elif bracket == "losers":
-        await _advance_losers(interaction, tournament, tournament_name, round_index, winner_name, loser_name, thread)
+        await _advance_losers(interaction, tournament, tournament_name, round_index, winner_name, loser_name, thread, players)
     elif bracket == "grand_final":
-        await _advance_grand_final(interaction, tournament, tournament_name, winner_name, loser_name, thread)
+        await _advance_grand_final(interaction, tournament, tournament_name, winner_name, loser_name, thread, players)
     elif bracket == "grand_final_reset":
         await _advance_grand_final_reset(interaction, tournament, tournament_name, winner_name, thread)
 
 
-async def _advance_winners(interaction, tournament, tournament_name, round_index, winner_name, loser_name, thread):
+async def _advance_winners(interaction, tournament, tournament_name, round_index, winner_name, loser_name, thread, players):
     winners_bracket = tournament["winners_bracket"]
     current_round = winners_bracket[round_index]
 
@@ -84,23 +98,23 @@ async def _advance_winners(interaction, tournament, tournament_name, round_index
         tournament["winners_champion"] = winners[0]
         await interaction.response.send_message(f"Match recorded: **{winner_name} wins!**")
         await thread.send(f"**{winners[0]}** is the Winners Bracket Champion! Waiting for Losers Bracket Champion...")
-        await _try_start_grand_final(interaction, tournament, tournament_name, thread)
+        await _try_start_grand_final(interaction, tournament, tournament_name, thread, players)
         return
 
     next_round_index = len(winners_bracket)
     next_matchups = make_matchups(winners)
     winners_bracket.append(next_matchups)
 
-    await _start_losers_round(tournament, tournament_name, thread)
+    await _start_losers_round(tournament, tournament_name, thread, players)
 
     await thread.send(f"**Winners Bracket - Round {next_round_index + 1}**")
     for i, match in enumerate(next_matchups):
-        await send_match(thread, tournament_name, "winners", next_round_index, i, match["player1"], match["player2"], f"Winners R{next_round_index + 1}")
+        await send_match(thread, tournament_name, "winners", next_round_index, i, match["player1"], match["player2"], f"Winners R{next_round_index + 1}", players)
 
     await interaction.response.send_message(f"Match recorded: **{winner_name} wins!** Next round posted.")
 
 
-async def _start_losers_round(tournament, tournament_name, thread):
+async def _start_losers_round(tournament, tournament_name, thread, players):
     losers_pool = tournament.get("losers_pool", [])
     if len(losers_pool) < 2:
         return
@@ -113,10 +127,10 @@ async def _start_losers_round(tournament, tournament_name, thread):
 
     await thread.send(f"**Losers Bracket - Round {round_index + 1}**")
     for i, match in enumerate(matchups):
-        await send_match(thread, tournament_name, "losers", round_index, i, match["player1"], match["player2"], f"Losers R{round_index + 1}")
+        await send_match(thread, tournament_name, "losers", round_index, i, match["player1"], match["player2"], f"Losers R{round_index + 1}", players)
 
 
-async def _advance_losers(interaction, tournament, tournament_name, round_index, winner_name, loser_name, thread):
+async def _advance_losers(interaction, tournament, tournament_name, round_index, winner_name, loser_name, thread, players):
     losers_bracket = tournament["losers_bracket"]
     current_round = losers_bracket[round_index]
 
@@ -131,7 +145,7 @@ async def _advance_losers(interaction, tournament, tournament_name, round_index,
         tournament["losers_champion"] = survivors[0]
         await interaction.response.send_message(f"Match recorded: **{winner_name} wins!**")
         await thread.send(f"**{survivors[0]}** is the Losers Bracket Champion!")
-        await _try_start_grand_final(interaction, tournament, tournament_name, thread)
+        await _try_start_grand_final(interaction, tournament, tournament_name, thread, players)
         return
 
     next_round_index = len(losers_bracket)
@@ -140,17 +154,20 @@ async def _advance_losers(interaction, tournament, tournament_name, round_index,
 
     await thread.send(f"**Losers Bracket - Round {next_round_index + 1}**")
     for i, match in enumerate(next_matchups):
-        await send_match(thread, tournament_name, "losers", next_round_index, i, match["player1"], match["player2"], f"Losers R{next_round_index + 1}")
+        await send_match(thread, tournament_name, "losers", next_round_index, i, match["player1"], match["player2"], f"Losers R{next_round_index + 1}", players)
 
     await interaction.response.send_message(f"Match recorded: **{winner_name} wins!** Next round posted.")
 
 
-async def _try_start_grand_final(interaction, tournament, tournament_name, thread):
+async def _try_start_grand_final(interaction, tournament, tournament_name, thread, players):
     winners_champ = tournament.get("winners_champion")
     losers_champ = tournament.get("losers_champion")
 
     if not winners_champ or not losers_champ:
         return
+
+    w_mention = get_mention(winners_champ, players)
+    l_mention = get_mention(losers_champ, players)
 
     await thread.send(f"**Grand Final: {winners_champ} vs {losers_champ}**\n_{winners_champ} comes from the Winners Bracket — {losers_champ} must win twice!_")
 
@@ -168,11 +185,12 @@ async def _try_start_grand_final(interaction, tournament, tournament_name, threa
         description="Click a button below to report the winner.",
         color=discord.Color.gold()
     )
+    embed.add_field(name="Participants", value=f"{w_mention} vs {l_mention}", inline=False)
     embed.add_field(name="Note", value=f"If {losers_champ} wins, a reset match will be played!", inline=False)
     await thread.send(embed=embed, view=view)
 
 
-async def _advance_grand_final(interaction, tournament, tournament_name, winner_name, loser_name, thread):
+async def _advance_grand_final(interaction, tournament, tournament_name, winner_name, loser_name, thread, players):
     winners_champ = tournament.get("winners_champion")
 
     if winner_name == winners_champ:
@@ -182,6 +200,9 @@ async def _advance_grand_final(interaction, tournament, tournament_name, winner_
     else:
         tournament["grand_final"]["winner"] = winner_name
         tournament["grand_final_reset"] = {"player1": winners_champ, "player2": winner_name}
+
+        w_mention = get_mention(winners_champ, players)
+        l_mention = get_mention(winner_name, players)
 
         await interaction.response.send_message(f"Match recorded: **{winner_name} wins!** Grand Final Reset incoming!")
         await thread.send(f"**Grand Final Reset!** Both players are now 1-1. One final match!")
@@ -198,6 +219,7 @@ async def _advance_grand_final(interaction, tournament, tournament_name, winner_
             description="Click a button below to report the winner.",
             color=discord.Color.gold()
         )
+        embed.add_field(name="Participants", value=f"{w_mention} vs {l_mention}", inline=False)
         await thread.send(embed=embed, view=view)
 
 

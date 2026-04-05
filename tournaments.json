@@ -30,10 +30,26 @@
             {
                 "name": "Naudu",
                 "id": 294082562211577856
+            },
+            {
+                "name": "ShortSt4X",
+                "id": 270014818453291008
             }
         ],
         "emoji": "\ud83c\udfae",
         "message_id": 1490137057710964816,
-        "channel_id": 1490113944507908128
+        "channel_id": 1490113944507908128,
+        "winners_bracket": [
+            [
+                {
+                    "player1": "Naudu",
+                    "player2": "ShortSt4X"
+                }
+            ]
+        ],
+        "losers_bracket": [],
+        "grand_final": null,
+        "grand_final_reset": null,
+        "losers_pool": []
     }
 }

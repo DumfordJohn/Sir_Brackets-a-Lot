@@ -1,5 +1,3 @@
-# cogs/tournament/setup.py
-
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -12,7 +10,7 @@ class TournamentSetup(commands.Cog):
     @app_commands.command(name="create_tournament", description="Create a new tournament.")
     @app_commands.describe(
         name="Name of the tournament",
-        type="Tournament type (single, double, roundrobin)",
+        type="Tournament type (single or double elimination)",
         emoji="Emoji players react with to sign up (default: 🎮)"
     )
     async def create_tournament(self, interaction: discord.Interaction, name: str, type: str, emoji: str = "🎮"):
@@ -29,9 +27,9 @@ class TournamentSetup(commands.Cog):
             await interaction.followup.send(f"Tournament `{name}` already exists.", ephemeral=True)
             return
 
-        if type not in ["single", "double", "roundrobin"]:
+        if type not in ["single", "double"]:
             await interaction.followup.send(
-                "Invalid type. Use: `single`, `double`, or `roundrobin`.", ephemeral=True
+                "Invalid type. Use: `single` or `double`.", ephemeral=True
             )
             return
 
