@@ -8,7 +8,6 @@ from cogs.tournament.match_view import MatchView
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-GUILD_ID = int(os.getenv('GUILD_ID'))
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -44,10 +43,8 @@ async def on_ready():
                 )
                 bot.add_view(view)
 
-    guild = discord.Object(id=GUILD_ID)
-    bot.tree.copy_global_to(guild=guild)
-    synced = await bot.tree.sync(guild=guild)
-    print(f"Synced {len(synced)} commands to guild {GUILD_ID}")
+    synced = await bot.tree.sync()
+    print(f"Synced {len(synced)} global commands.")
     print("Commands registered:")
     for command in synced:
         print(f" - /{command.name}: {command.description}")
