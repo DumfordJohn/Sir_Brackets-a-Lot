@@ -14,7 +14,7 @@ class TournamentStart(commands.Cog):
         print("Received start_tournament command")
         await interaction.response.defer()
 
-        if not interaction.user.guild_permissions.administrator:
+        if not is_tournament_admin(interaction.user):
             await interaction.followup.send("You must be an admin to start a tournament.", ephemeral=True)
             return
 
@@ -56,7 +56,7 @@ class TournamentStart(commands.Cog):
         elif tournament_type == "double":
             await double.start(interaction, name, tournament, players, thread)
         else:
-            await interaction.followup.send(f"Tournament type `{tournament_type}` is not yet supported.", ephemeral=True)
+            await interaction.followup.send(f"Tournament type `{tournament_type}` is not supported.", ephemeral=True)
             return
 
         save_tournaments(tournaments)

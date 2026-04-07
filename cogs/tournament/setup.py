@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+from permissions import is_tournament_admin
 from tournament_data import load_tournaments, save_tournaments
 
 class TournamentSetup(commands.Cog):
@@ -17,7 +18,7 @@ class TournamentSetup(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         print(f"Received create_tournament: name={name}, type={type}, emoji={emoji}")
 
-        if not interaction.user.guild_permissions.administrator:
+        if not is_tournament_admin(interaction.user):
             await interaction.followup.send("You must be an admin to use this command.", ephemeral=True)
             return
 
@@ -33,15 +34,21 @@ class TournamentSetup(commands.Cog):
             )
             return
 
-        signup_channel = discord.utils.get(interaction.guild.text_channels, name="sign-ups")
+        guild_config = get_guild_config(interaction.guild.id)
+        channel_id = guild_config.get("signup_channel_id")
+
+        if channel_id:
+            signup_channel = interaction.guild.get_channel(channel_id)
+        else:
+            signup_channel = discord.utils.get(interaction.guild.text_channels, name="sign-ups")
+
         if not signup_channel:
-            await interaction.followup.send("Could not find a #sign-ups channel.", ephemeral=True)
-            return
+            await interaction.followup.send("Could not find the signup channel.  Use `/setup_bot` to configure one.", ephemeral=True)
 
         embed = discord.Embed(
             title=f"{name} Tournament Sign-Up",
             description=f"React with {emoji} to join!",
-            color=discord.Color.green()
+            color=discord.Color.blue()
         )
 
         try:
