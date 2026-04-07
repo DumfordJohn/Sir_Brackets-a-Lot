@@ -43,19 +43,26 @@ In the root of the project create a file named `.env`:
 DISCORD_TOKEN=your_bot_token_here
 ```
 
-### 5. Set up your server
-Make sure your server has a channel named exactly `sign-ups` — this is where tournament signup embeds will be posted.
-
-### 6. Run the bot
+### 5. Run the bot
 ```
 python bot.py
 ```
+
+### 6. Configure the bot in your server
+Once the bot is running, a server administrator must run `/setup_bot` to set the tournament admin role and signup channel before tournaments can be created. If `/setup_bot` has not been run, the bot will fall back to a channel named `#sign-ups`.
 
 ---
 
 ## Commands
 
+### Admin Only
 | Command | Description |
 |---|---|
-| `/create_tournament name type emoji` | Create a new tournament. Type is `single` or `double`. Emoji is optional (defaults to 🎮) |
-| `/start_tournament name` | Start a tournament and post the bracket. Must be an admin. |
+| `/setup_bot role channel` | Configure the tournament admin role and signup channel for the server. Must be a server administrator. |
+| `/get_bot_setup` | Check the current tournament admin role and signup channel. Must be a server administrator. |
+
+### Tournament Admin
+| Command | Description |
+|---|---|
+| `/create_tournament name type emoji` | Create a new tournament. Type is `single` or `double`. Emoji is optional (defaults to 🎮). |
+| `/start_tournament name` | Start a tournament and post the bracket. |
