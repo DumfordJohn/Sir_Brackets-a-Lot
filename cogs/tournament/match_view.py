@@ -1,5 +1,3 @@
-# cogs/tournament/match_view.py
-
 import discord
 from discord.ui import View, Button
 

@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+from permissions import is_tournament_admin
 from tournament_data import load_tournaments, save_tournaments
 from cogs.tournament.formats import single, double
 

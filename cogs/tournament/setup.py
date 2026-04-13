@@ -1,3 +1,4 @@
+from bot_config import get_guild_config
 import discord
 from discord.ext import commands
 from discord import app_commands
