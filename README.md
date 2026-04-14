@@ -1,68 +1,65 @@
 # Sir Brackets-a-Lot
 
-A Discord bot for running single and double elimination tournaments using reaction-based signups.
+A Discord bot for running single and double elimination tournaments — solo or team-based — with reaction signups and button-based match reporting.
 
 ---
 
-## Features
+## Setting Up Your Server
 
-- Create tournaments with a custom signup emoji
-- Players sign up by reacting to the signup message
-- Single elimination and double elimination brackets
-- Match results reported via buttons
-- Bracket auto-advances after each round
-- Double elimination includes grand final and grand final reset
+Once the bot is running, a server administrator needs to do a one-time setup before tournaments can be created.
 
----
+**Step 1 — Run `/setup_bot`**
+Pick the role you want to act as Tournament Admin and the channel where signup embeds will be posted. Anyone with the Tournament Admin role will be able to create and start tournaments.
 
-## Setup
+**Step 2 — Create a tournament**
+Run `/create_tournament` and fill in the name, type (single or double), mode (solo or team), and optionally a custom signup emoji. If you're running a team tournament, you'll also need to set a team size.
 
-### 1. Clone the repo
-```
-git clone https://github.com/DumfordJohn/Sir_Brackets-a-Lot.git
-cd Sir_Brackets-a-Lot
-```
+**Step 3 — Let players sign up**
+The bot will post a signup embed in your configured channel. Players react with the signup emoji to join. Unreacting removes them from the list.
 
-### 2. Install dependencies
-```
-pip install -r requirements.txt
-```
+**Step 4 — Start the tournament**
+Once everyone has signed up, run `/start_tournament`. The bot will create a thread off the signup message, post all the matchups, and ping each participant. If it's a team tournament, teams are randomly assigned first and captains are pinged for each match.
 
-### 3. Create a Discord bot
-- Go to https://discord.com/developers/applications
-- Create a new application and add a bot
-- Under **Bot**, enable all three Privileged Gateway Intents:
-  - Presence Intent
-  - Server Members Intent
-  - Message Content Intent
-- Under **OAuth2**, generate an invite URL with the `bot` and `applications.commands` scopes and invite it to your server
-
-### 4. Create a .env file
-In the root of the project create a file named `.env`:
-```
-DISCORD_TOKEN=your_bot_token_here
-```
-
-### 5. Run the bot
-```
-python bot.py
-```
-
-### 6. Configure the bot in your server
-Once the bot is running, a server administrator must run `/setup_bot` to set the tournament admin role and signup channel before tournaments can be created. If `/setup_bot` has not been run, the bot will fall back to a channel named `#sign-ups`.
+**Step 5 — Report match results**
+Players (or team captains) click the winner button on their match embed. The bracket advances automatically after each round completes.
 
 ---
 
-## Commands
+## Appendix — Command Reference
 
-### Admin Only
-| Command | Description |
+### Server Admin Only
+These commands require the full **Administrator** permission in the server.
+
+| Command | What it does |
 |---|---|
-| `/setup_bot role channel` | Configure the tournament admin role and signup channel for the server. Must be a server administrator. |
-| `/get_bot_setup` | Check the current tournament admin role and signup channel. Must be a server administrator. |
+| `/setup_bot role channel` | Sets the Tournament Admin role and the signup channel for the server. Must be run before tournaments can be created. |
+| `/get_bot_setup` | Shows the currently configured Tournament Admin role and signup channel. |
+
+---
 
 ### Tournament Admin
-| Command | Description |
+These commands can be used by anyone with the Tournament Admin role, or a server administrator.
+
+| Command | What it does |
 |---|---|
-| `/create_tournament name type emoji` | Create a new tournament. Type is `single` or `double`. Emoji is optional (defaults to 🎮). |
-| `/start_tournament name` | Start a tournament and post the bracket. |
+| `/create_tournament name type mode teamsize emoji` | Creates a new tournament and posts the signup embed. `type` is `single` or `double`. `mode` is `solo` or `team` (defaults to `solo`). `teamsize` is required if mode is `team`. `emoji` is optional and defaults to 🎮. |
+| `/start_tournament name` | Starts the tournament, randomly assigns teams if applicable, and posts the bracket in a thread. For team tournaments, player count must be divisible by team size. |
+
+---
+
+### Players
+These don't require any commands — players interact with the bot through reactions and buttons.
+
+| Action | What it does |
+|---|---|
+| React with the signup emoji | Joins the tournament. |
+| Remove the signup reaction | Leaves the tournament. |
+| Click a winner button on a match embed | Reports the winner of that match. In team tournaments, only the captain of one of the two competing teams can do this. |
+
+---
+
+## Notes
+
+- Tournaments are saved to `tournaments.json` so they persist across bot restarts.
+- If the bot restarts mid-tournament, all active match buttons are automatically re-registered on startup.
+- The `#sign-ups` channel name is used as a fallback if `/setup_bot` hasn't been run yet.
