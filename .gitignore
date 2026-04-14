@@ -1,6 +1,7 @@
 # Ignore environment and config files
 .env
 bot_config.json
+tournaments.json
 
 # Python cache files
 __pycache__/
@@ -15,3 +16,4 @@ env/
 .idea/
 .DS_Store
 .env
+tournaments.json

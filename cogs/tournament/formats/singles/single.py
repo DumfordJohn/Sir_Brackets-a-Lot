@@ -1,7 +1,11 @@
 import discord
 import random
-from tournament_data import load_tournaments, save_tournaments
 from cogs.tournament.match_view import MatchView
+
+
+def get_mention(name: str, players: list) -> str:
+    player = next((p for p in players if p["name"] == name), None)
+    return f"<@{player['id']}>" if player else name
 
 
 async def start(interaction: discord.Interaction, tournament_name: str, tournament: dict, players: list, thread):
@@ -15,11 +19,8 @@ async def start(interaction: discord.Interaction, tournament_name: str, tourname
             matchups.append((players[i]["name"], "BYE"))
 
     for i, (p1, p2) in enumerate(matchups):
-        p1_data = next((p for p in players if p["name"] == p1), None)
-        p2_data = next((p for p in players if p["name"] == p2), None)
-
-        p1_mention = f"<@{p1_data['id']}>" if p1_data else p1
-        p2_mention = f"<@{p2_data['id']}>" if p2_data else p2
+        p1_mention = get_mention(p1, players)
+        p2_mention = get_mention(p2, players)
 
         embed = discord.Embed(
             title=f"Match {i + 1}: {p1} vs {p2}",
@@ -35,16 +36,19 @@ async def start(interaction: discord.Interaction, tournament_name: str, tourname
             player1=p1,
             player2=p2
         )
-        await thread.send(embed=embed, view=view)
+        await thread.send(f"{p1_mention} vs {p2_mention}", embed=embed, view=view)
 
     tournament["rounds"] = [matchups]
+    tournament["players"] = players
 
 
 async def advance(interaction: discord.Interaction, tournament: dict, tournament_name: str, rounds: list, round_index: int, winner_name: str):
+    players = tournament.get("players", [])
     winners = [m["winner"] for m in rounds[round_index]]
 
     if len(winners) == 1:
-        await interaction.response.send_message(f"Tournament **{tournament_name}** is over! Winner: **{winners[0]}**")
+        winner_mention = get_mention(winners[0], players)
+        await interaction.response.send_message(f"Tournament **{tournament_name}** is over! Winner: {winner_mention}")
         return
 
     random.shuffle(winners)
@@ -60,12 +64,15 @@ async def advance(interaction: discord.Interaction, tournament: dict, tournament
     if thread:
         await thread.send(f"Round {round_index + 1} complete! Starting Round {round_index + 2}...")
         for i, (p1, p2) in enumerate(next_round):
+            p1_mention = get_mention(p1, players)
+            p2_mention = get_mention(p2, players)
+
             embed = discord.Embed(
                 title=f"Round {round_index + 2} - Match {i + 1}: {p1} vs {p2}",
                 description="Click a button below to report the winner.",
                 color=discord.Color.blue()
             )
-            embed.add_field(name="Participants", value=f"{p1} vs {p2}", inline=False)
+            embed.add_field(name="Participants", value=f"{p1_mention} vs {p2_mention}", inline=False)
 
             view = MatchView(
                 tournament_name=tournament_name,
@@ -74,6 +81,6 @@ async def advance(interaction: discord.Interaction, tournament: dict, tournament
                 player1=p1,
                 player2=p2
             )
-            await thread.send(embed=embed, view=view)
+            await thread.send(f"{p1_mention} vs {p2_mention}", embed=embed, view=view)
 
     await interaction.response.send_message(f"Match recorded: **{winner_name} wins!** Next round posted.")

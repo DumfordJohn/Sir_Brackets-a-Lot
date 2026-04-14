@@ -2,7 +2,8 @@ import discord
 import traceback
 from discord.ext import commands
 from tournament_data import load_tournaments, save_tournaments
-from cogs.tournament.formats import single, double, team_single, team_double
+from cogs.tournament.formats.singles import single, double
+from cogs.tournament.formats.teams import team_single, team_double
 from cogs.tournament.team_utils import is_captain
 
 class InteractionListener(commands.Cog):
@@ -20,6 +21,8 @@ class InteractionListener(commands.Cog):
         print(f"Parts: {parts} (count: {len(parts)})")
 
         try:
+            # Team button: team|tournament_name|round_index|match_index|winner
+            # Team double: team|tournament_name|bracket|round_index|match_index|winner
             if parts[0] == "team":
                 await self._handle_team_interaction(interaction, parts)
                 return
